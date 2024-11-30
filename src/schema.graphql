@@ -1,0 +1,21 @@
+"""
+GraphQLスキーマの定義
+Mutation
+ ・"post"は任意の名前
+ ・引数がurlとdescription
+"""
+
+type Query {
+    info: String!
+    feed: [Link]!
+}
+
+type Mutation {
+    post(url: String!, description: String!): Link!
+}
+
+type Link {
+    id: ID!
+    description: String!
+    url: String!
+}
