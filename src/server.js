@@ -8,13 +8,15 @@ const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
 // HackerNewsの1つ1つの投稿
-let links = [
-    {
-        id: "link-0",
-        description: "GraphQLチュートリアルをUdemyで学ぶ",
-        url: "www.udemy-graphql-tutorial.com",
-    },
-]
+// let links = [
+//     {
+//         id: "link-0",
+//         description: "GraphQLチュートリアルをUdemyで学ぶ",
+//         url: "www.udemy-graphql-tutorial.com",
+//     },
+// ]
+// ⇒リゾルバ関数の中でlinks変数を参照していたが、DBから取得するようにしたため削除
+
 // GraphQLスキーマの定義
 // ⇒別ファイルへ切り出し済み(schema.graphql)
 
@@ -23,20 +25,32 @@ let links = [
 const resolvers = {
     Query: {
         info: () => "HackerNewsクローン",
-        feed: () => links,
+        feed: async (parent, args, context) => {
+            const allLinks = context.prisma.link.findMany();
+            return allLinks;
+        },
     },
     Mutation: {
-        post: (parent, args) => {
-            let idCount = links.length;
+        // post: (parent, args) => {
+            // let idCount = links.length;
 
-            const link = {
-                id: `link-${idCount++}`,
-                description: args.description,
-                url: args.url,
-            };
+            // const link = {
+            //     id: `link-${idCount++}`,
+            //     description: args.description,
+            //     url: args.url,
+            // };
 
-            links.push(link);
-            return link;
+            // links.push(link);
+            // return link;
+        // }
+        post: (parent, args, context) => {
+            const newLink = context.prisma.link.create({
+                data: {
+                    url: args.url,
+                    description: args.description,
+                },
+            })
+            return newLink;
         }
     },
 };
