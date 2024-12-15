@@ -7,68 +7,38 @@ const path = require("path");
 const { PrismaClient } = require("@prisma/client");
 const prisma = new PrismaClient();
 
-// HackerNewsの1つ1つの投稿
-// let links = [
-//     {
-//         id: "link-0",
-//         description: "GraphQLチュートリアルをUdemyで学ぶ",
-//         url: "www.udemy-graphql-tutorial.com",
-//     },
-// ]
-// ⇒リゾルバ関数の中でlinks変数を参照していたが、DBから取得するようにしたため削除
+// リゾルバ関連のファイル
+const Query = require("./resolvers/Query");
+const Mutation = require("./resolvers/Mutation");
+const Link = require("./resolvers/Link");
+const User = require("./resolvers/User");
 
-// GraphQLスキーマの定義
-// ⇒別ファイルへ切り出し済み(schema.graphql)
+const { getUserId } = require("./utils");
 
 // リゾルバ関数
 // 定義した型に対して実体を設定していくのがリゾルバ関数
 const resolvers = {
-    Query: {
-        info: () => "HackerNewsクローン",
-        feed: async (parent, args, context) => {
-            const allLinks = context.prisma.link.findMany();
-            return allLinks;
-        },
-    },
-    Mutation: {
-        // post: (parent, args) => {
-            // let idCount = links.length;
-
-            // const link = {
-            //     id: `link-${idCount++}`,
-            //     description: args.description,
-            //     url: args.url,
-            // };
-
-            // links.push(link);
-            // return link;
-        // }
-        post: (parent, args, context) => {
-            const newLink = context.prisma.link.create({
-                data: {
-                    url: args.url,
-                    description: args.description,
-                },
-            })
-            return newLink;
-        }
-    },
-};
+    QUery,
+    Mutation,
+    Link,
+    User,
+}
 
 const server = new ApolloServer({
     typeDefs: fs.readFileSync(path.join(__dirname, "schema.graphql"), "utf-8"),
     resolvers,
-    // prismaインスタンスをリゾルバの中で使えるようにする。
-    context: {
-        prisma,
+    context: ({req}) => {
+        // このオブジェクトに定義した項目は全てのリゾルバで使えるようになる。
+        //   contextを使ってprisma関数を使う、userIdをセットする　など
+        return {
+            ...req, // スプレッド構文
+            prisma, // prismaインスタンスをリゾルバの中で使えるようにする。
+            // 3項演算子
+            // a && b ? X : Y は、aかつbだったらXでそれ以外ならYという意味
+            userId: req && req.headers.authorization ? getUserId(req) : null,
+        }
     }
 });
 
 const port = 4050; // 任意のポート番号
 server.listen({port}).then(({url}) => console.log(`${url}でサーバを起動中・・・`));
-
-// const { url } = await startStandaloneServer(server, {
-//     listen: { port: 4001 }
-// });
-
-// console.log(`Server ready at: ${url}`);
