@@ -16,6 +16,10 @@ type Mutation {
     login(email: String!, password: String!): AuthPayload
 }
 
+type Subscription {
+    newLink: Link
+}
+
 type Link {
     id: ID!
     description: String!
@@ -25,12 +29,13 @@ type Link {
 
 type AuthPayload {
     token: String
-    User: User
+    user: User
 }
 
 type User {
     id: ID!
     name: String!
     email: String!
+    # password: String!
     links: [Link!]!
 }

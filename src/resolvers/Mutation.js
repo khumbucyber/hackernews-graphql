@@ -2,7 +2,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 // utils.jsに定義した鍵をrequire
-const APP_SECRET = require("../utils");
+// 分割代入でAPP_SECRETのみを取り出す。
+const { APP_SECRET } = require("../utils");
+const { postedBy } = require("./Link");
 
 // ユーザの新規登録のリゾルバ
 async function signup(parent, args, context) {
@@ -10,6 +12,8 @@ async function signup(parent, args, context) {
     // hashの２番目引数はソルト
     const password = await bcrypt.hash(args.password, 10);
     // ユーザの新規作成
+    console.log(`start: context.prisma.user.create`);
+    console.log(context.prisma.user.password);
     const user = await context.prisma.user.create({
         // ... = SPREAD構文？
         // password変数の内容で、argsの２番目のpasswordをハッシュ化したものに置き換えるの意味
@@ -17,14 +21,13 @@ async function signup(parent, args, context) {
         //   signup(email: String!, password: String!, name: String!): AuthPayload
         //  ⇒この２番目のpasswordが置き換わる。
         // https://chatgpt.com/share/67540e0a-ac74-800e-a674-783bffaa03ea
-
         data: {
             ...args,
             password,
-            postedBy: context.
+            // postedBy: context,
         }
     });
-
+    // console.log(`user object: ${user}`);
     const token = jwt.sign({userId: user.id}, APP_SECRET);
 
     // type AuthPayload の情報を返却
@@ -66,10 +69,19 @@ async function post(parent, args, context) {
         data: {
             url: args.url,
             description: args.description,
-            positedBy: { connect: {id: userId} }
+            postedBy: { connect: {id: userId} },
         },
     })
 }
+
+
+// type User {
+//     id: ID!
+//     name: String!
+//     email: String!
+//     # password: String!
+//     links: [Link!]!
+// }
 
 module.exports = {
     signup,

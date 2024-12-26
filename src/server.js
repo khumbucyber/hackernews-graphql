@@ -5,7 +5,7 @@ const fs = require("fs");
 const path = require("path");
 
 const { PrismaClient } = require("@prisma/client");
-const prisma = new PrismaClient();
+const { getUserId } = require("./utils");
 
 // リゾルバ関連のファイル
 const Query = require("./resolvers/Query");
@@ -13,12 +13,17 @@ const Mutation = require("./resolvers/Mutation");
 const Link = require("./resolvers/Link");
 const User = require("./resolvers/User");
 
-const { getUserId } = require("./utils");
+// サブスクリプションの実装
+// Publisher(送信者)／Subscriber(受信者)
+const { PubSub } = require("apollo-server");
+
+const prisma = new PrismaClient();
+const pubsub = new PubSub();
 
 // リゾルバ関数
 // 定義した型に対して実体を設定していくのがリゾルバ関数
 const resolvers = {
-    QUery,
+    Query,
     Mutation,
     Link,
     User,
@@ -33,6 +38,7 @@ const server = new ApolloServer({
         return {
             ...req, // スプレッド構文
             prisma, // prismaインスタンスをリゾルバの中で使えるようにする。
+            pubsub,
             // 3項演算子
             // a && b ? X : Y は、aかつbだったらXでそれ以外ならYという意味
             userId: req && req.headers.authorization ? getUserId(req) : null,
@@ -41,4 +47,4 @@ const server = new ApolloServer({
 });
 
 const port = 4050; // 任意のポート番号
-server.listen({port}).then(({url}) => console.log(`${url}でサーバを起動中・・・`));
+server.listen({port}).then(({url}) => console.log(`${url} でサーバを起動中・・・`));
