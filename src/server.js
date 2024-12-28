@@ -12,6 +12,7 @@ const Query = require("./resolvers/Query");
 const Mutation = require("./resolvers/Mutation");
 const Link = require("./resolvers/Link");
 const User = require("./resolvers/User");
+const Subscription = require("./resolvers/Subscription");
 
 // サブスクリプションの実装
 // Publisher(送信者)／Subscriber(受信者)
@@ -23,8 +24,9 @@ const pubsub = new PubSub();
 // リゾルバ関数
 // 定義した型に対して実体を設定していくのがリゾルバ関数
 const resolvers = {
-    Query,
-    Mutation,
+    Query,  // データの取得
+    Mutation,   // データの送信
+    Subscription,   // リアルタイム通信
     Link,
     User,
 }

@@ -65,13 +65,20 @@ async function login(parent, args, context) {
 // ニュース投稿用のリゾルバ
 async function post(parent, args, context) {
     const { userId } = context;
-    return await context.prisma.link.create({
+
+    const newLink = await context.prisma.link.create({
         data: {
             url: args.url,
             description: args.description,
             postedBy: { connect: {id: userId} },
         },
     })
+
+    // 送信
+    // トリガー名"NEW_LINK"を受信側とそろえる。
+    context.pubsub.publish("NEW_LINK", newLink);
+    
+    return newLink;
 }
 
 
