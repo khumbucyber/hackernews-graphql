@@ -21,6 +21,7 @@ model Link {
   // 認証用
   postedBy User? @relation(fields: [postedById], references: [id])
   postedById Int?
+  votes Vote[]
 }
 
 model User {
@@ -29,4 +30,16 @@ model User {
   email String @unique
   password String
   links Link[]
+  votes Vote[]
+}
+
+model Vote {
+  id Int @id @default(autoincrement())
+  // idは、参照先のLinkのidでは？動画ではVoteのidという説明だった。
+  link Link @relation(fields: [linkId], references: [id])
+  linkId Int
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+
+  @@unique([linkId, userId])
 }

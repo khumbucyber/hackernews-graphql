@@ -12,8 +12,6 @@ async function signup(parent, args, context) {
     // hashの２番目引数はソルト
     const password = await bcrypt.hash(args.password, 10);
     // ユーザの新規作成
-    console.log(`start: context.prisma.user.create`);
-    console.log(context.prisma.user.password);
     const user = await context.prisma.user.create({
         // ... = SPREAD構文？
         // password変数の内容で、argsの２番目のpasswordをハッシュ化したものに置き換えるの意味
@@ -27,7 +25,6 @@ async function signup(parent, args, context) {
             // postedBy: context,
         }
     });
-    // console.log(`user object: ${user}`);
     const token = jwt.sign({userId: user.id}, APP_SECRET);
 
     // type AuthPayload の情報を返却
@@ -65,7 +62,6 @@ async function login(parent, args, context) {
 // ニュース投稿用のリゾルバ
 async function post(parent, args, context) {
     const { userId } = context;
-
     const newLink = await context.prisma.link.create({
         data: {
             url: args.url,
@@ -81,6 +77,49 @@ async function post(parent, args, context) {
     return newLink;
 }
 
+// 投票用のリゾルバ
+async function vote(parent, args, context) {
+    const userId = context.userId;
+    // 投票対象のlinkが存在するか
+    const link = await context.prisma.link.findUnique ({
+        where: {
+            id: Number(args.linkId),
+        }
+    });
+    if (link) {
+        console.log(`投票対象のlinkが存在する:${link.id}`);
+    } else {
+        throw new Error(`投票対象の投稿が存在しません:${args.linkId}`);
+    }
+
+    // 同じlink&userで登録済みの投票があるか
+    const registeredVote = await context.prisma.vote.findUnique ({
+        where: {
+            linkId_userId: {
+                linkId: Number(args.linkId),
+                userId: userId,
+            },
+        },
+    });
+
+    // 2回答票を防ぐ
+    if (Boolean(registeredVote)) {
+        throw new Error(`すでにその投稿には投票されています:${args.linkId}`);
+    }
+
+    // 投票する
+    const newVote = context.prisma.vote.create({
+        data: {
+            user: { connect: { id: userId } },
+            link: { connect: { id: Number(args.linkId) } },
+        },
+    });
+
+    // 送信
+    context.pubsub.publish("NEW_VOTE", newVote);
+
+    return newVote;
+}
 
 // type User {
 //     id: ID!
@@ -94,4 +133,5 @@ module.exports = {
     signup,
     login,
     post,
+    vote,
 }
